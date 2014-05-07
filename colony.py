@@ -3,6 +3,7 @@ import sys
 from optparse import OptionParser
 from logutils import initLogging,getLogger
 from collector import CollectorAnt
+from scout import ScoutAnt
 
 
 class Colony:
@@ -18,6 +19,11 @@ class Colony:
             if collector.getPosition() == ant:
                 return True
 
+        #Check in scouts
+        for scout in self.scouts:
+            if scout.getPosition() == ant:
+                return True
+
         return False
 
 
@@ -31,11 +37,46 @@ class Colony:
 
     def moveCollectors(self, ants):
         getLogger().debug("Moving collectors: " + str(len(self.collectors)))
+
+        toRemove = []
+
         #Get moves from collectors
         for i in range (0, len(self.collectors)):
             direction = self.collectors[i].suggestMove(ants, self)
-            getLogger().debug("Moving collector: " + str(self.collectors[i].getPosition()) + " to " + direction)
-            self.collectors[i].executeMove(ants, direction, self)
+            if direction == '#':
+                self.scouts.append(ScoutAnt(self.collectors[i].getPosition()))
+                toRemove.append(self.collectors[i])
+            else:
+                getLogger().debug("Moving collector: " + str(self.collectors[i].getPosition()) + " to " + direction)
+                self.collectors[i].executeMove(ants, direction, self)
+
+        for i in range(0, len(toRemove)):
+            self.collectors.remove(toRemove[i])
+
+
+    def moveScouts(self, ants):
+        getLogger().debug("Moving scouts: " + str(len(self.scouts)))
+        toRemove = []
+
+        food = ants.food()
+        targetedFood = [self.collectors[i].target for i in range(0, len(self.collectors))]
+        foodNotTargeted =  len(food) - len(targetedFood)
+
+        #Get moves from scouts
+        for i in range (0, len(self.scouts)):
+            direction = self.scouts[i].suggestMove(ants, self)
+            if foodNotTargeted > 5:
+                self.collectors.append(CollectorAnt(self.scouts[i].getPosition()))
+                self.collectors.append
+                toRemove.append(self.scouts[i])
+                foodNotTargeted = foodNotTargeted - 1
+            else:
+                getLogger().debug("Moving scout: " + str(self.scouts[i].getPosition()) + " to " + direction)
+                self.scouts[i].executeMove(ants, direction, self)
+
+        for i in range(0, len(toRemove)):
+            self.scouts.remove(toRemove[i])
+
 
 
     def setOccupied(self):
@@ -54,6 +95,11 @@ class Colony:
             if not(collector.getPosition() in ants):
                 self.collectors.remove(collector)
 
+        #check scouts
+        for scout in self.scouts:
+            if not(scout.getPosition() in ants):
+                self.scouts.remove(scout)
+
 
     def move(self, ants):
         self.deleteDead(ants)
@@ -62,4 +108,4 @@ class Colony:
         self.setOccupied()
         getLogger().debug(str(self.occupied))
         self.moveCollectors(ants)
-
+        self.moveScouts(ants)

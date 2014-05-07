@@ -16,6 +16,9 @@ DEAD = -1
 LAND = -2
 FOOD = -3
 WATER = -4
+UNSEEN = -5
+HILL = -6
+
 
 PLAYER_ANT = 'abcdefghij'
 HILL_ANT = string = 'ABCDEFGHIJ'
@@ -261,12 +264,23 @@ class Ants():
         return tmp
 
 
-    def get_nearest_food(self, start):
+    def get_nearest_unseen(self, start):
+        unseen = {}
+        for row in range(self.rows):
+            for col in range(self.cols):
+                unseen[(row, col)] = True
+
+        for key in unseen.keys():
+            if self.visible(key):
+                del unseen[key]
+                
+
         opened = Queue()
         opened.put(start)
         openedBefore = {}
         cameFrom = {}
         destination = False
+
 
         DIRECTIONS = ['n', 'w', 'e', 's']
 
@@ -281,15 +295,16 @@ class Ants():
                     openedBefore[newLoc] = True
 
                     #If goal is found
-                    if(self.map[newLoc[0]][newLoc[1]] == FOOD and self.map[newLoc[0]][newLoc[1]] ):
+                    if(unseen.get(newLoc, False)):
                         destination = newLoc
 
         if not destination:
-            getLogger().debug("Random direction")
+            getLogger().debug("Path not found")
             return []
 
         path = []
 
+        target = destination
         while cameFrom[destination][0] != start:
             path.insert(0, cameFrom[destination])
             destination = cameFrom[destination][0]
@@ -298,6 +313,56 @@ class Ants():
 
         getLogger().debug("Found: " + str(path))
         return path
+
+
+    def get_nearest_food(self, start, filters):
+        
+        foods = self.food()
+        for food in foods:
+            if food in filters:
+                foods.remove(food)
+                
+        if(len(foods) == 0):
+            return ([], None)
+
+        opened = Queue()
+        opened.put(start)
+        openedBefore = {}
+        cameFrom = {}
+        destination = False
+
+        DIRECTIONS = ['n', 'w', 'e', 's']
+        getLogger().debug(str(filters))
+
+        while (not opened.empty()) and (not destination):
+            current = opened.get()
+            for direction in DIRECTIONS:
+                newLoc = self.destination(current, direction)
+                if (not openedBefore.get(newLoc, False)) and self.passable(newLoc):
+                    #Open a node
+                    cameFrom[newLoc] = (current, direction)
+                    opened.put(newLoc)
+                    openedBefore[newLoc] = True
+
+                    #If goal is found
+                    if(self.map[newLoc[0]][newLoc[1]] == FOOD and not(self.map[newLoc[0]][newLoc[1]] in filters)):
+                        destination = newLoc
+
+        if not destination:
+            getLogger().debug("Path not found")
+            return ([], None)
+
+        path = []
+
+        target = destination
+        while cameFrom[destination][0] != start:
+            path.insert(0, cameFrom[destination])
+            destination = cameFrom[destination][0]
+
+        path.insert(0, cameFrom[destination])
+
+        getLogger().debug("Found: " + str(path))
+        return (path, target)
 
 
     # static methods are not tied to a class and don't have self passed in

@@ -23,7 +23,15 @@ class Ant:
                 self.position = newPos
                 return True
             elif ants.passable(newPos):
-                getLogger().debug("Failed to execute move: " +  str(newPos) + " is occupied.")
+                getLogger().debug("Moved randomly: " +  str(newPos) + " is occupied.")
+                directions = ['n', 's','e', 'w']
+                for direction in directions:
+                    newPos = ants.destination(self.position, direction)
+                    if (not self.isOccupied(newPos, colony.occupied)) and ants.passable(newPos):
+                        ants.issue_order((self.position, direction))
+                        colony.occupied[newPos] = True
+                        self.position = newPos
+                        return True
         elif self.noob:
             directions = ['n', 's','e', 'w']
             for direction in directions:
@@ -35,6 +43,7 @@ class Ant:
                     return True
             self.noob = False
         else:
+
             getLogger().debug("Failed to execute move: Direction is #")
 
         return False
