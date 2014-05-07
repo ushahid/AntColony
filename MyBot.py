@@ -1,42 +1,54 @@
 #!/usr/bin/env python
+import logging
+import sys
+from optparse import OptionParser
+from logutils import initLogging,getLogger
+from colony import Colony
 from ants import *
-from population import Population
-from chromosome import Chromosome
+
+
+
+turn_number = 1
+bot_version = 'v0.1'
+initLogging()
+
+class LogFilter(logging.Filter):
+  """
+  This is a filter that injects stuff like TurnNumber into the log
+  """
+  def filter(self,record):
+    global turn_number,bot_version
+    record.turn_number = turn_number
+    record.version = bot_version
+    return True
 
 # define a class with a do_turn method
 # the Ants.run method will parse and update bot input
 # it will also run the do_turn method for us
 class MyBot:
     def __init__(self):
-        # define class level variables, will be remembered between turns
-        pass
+        """Add our log filter so that botversion and turn number are output correctly"""        
+        log_filter  = LogFilter()
+        getLogger().addFilter(log_filter)
     
     # do_setup is run once at the start of the game
     # after the bot has received the game settings
     # the ants class is created and setup by the Ants.run method
     def do_setup(self, ants):
-        # initialize data structures after learning the game settings
-        pass
+        self.initialized = False
     
     # do turn is run once per turn
     # the ants class has the game state and is updated by the Ants.run method
     # it also has several helper methods to use
     def do_turn(self, ants):
-        # loop through all my ants and try to give them orders
-        # the ant_loc is an ant location tuple in (row, col) form
-        population = Population()
-        chromosome = population.run(ants)
-        #chromosome = Chromosome()
-        #chromosome.create(ants)
-        #loop over antlocations
-        #
-        antLocs = ants.my_ants();
-        for i in range(0,len( antLocs)):
-
-            new_loc = ants.destination(antLocs[i], chromosome[i])
-            if (ants.passable(new_loc)):
-
-                ants.issue_order( antLocs[i], chromosome[i])
+        global turn_number
+        if not self.initialized:
+            self.colony = Colony(ants)
+            self.initialized = True
+        else:
+            self.colony.move(ants)
+        turn_number = turn_number + 1
+        
         """    
         i =0
         for ant_loc in ants.my_ants():
@@ -57,7 +69,7 @@ class MyBot:
             # check if we still have time left to calculate more orders
             if ants.time_remaining() < 10:
                 break
-           """ 
+           """
            
 if __name__ == '__main__':
     # psyco will speed up python a little, but is not needed

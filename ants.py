@@ -5,6 +5,10 @@ import random
 import time
 from collections import defaultdict
 from math import sqrt
+from Queue import Queue
+import logging
+from optparse import OptionParser
+from logutils import initLogging,getLogger
 
 MY_ANT = 0
 ANTS = 0
@@ -255,6 +259,46 @@ class Ants():
         for row in self.map:
             tmp += '# %s\n' % ''.join([MAP_RENDER[col] for col in row])
         return tmp
+
+
+    def get_nearest_food(self, start):
+        opened = Queue()
+        opened.put(start)
+        openedBefore = {}
+        cameFrom = {}
+        destination = False
+
+        DIRECTIONS = ['n', 'w', 'e', 's']
+
+        while (not opened.empty()) and (not destination):
+            current = opened.get()
+            for direction in DIRECTIONS:
+                newLoc = self.destination(current, direction)
+                if (not openedBefore.get(newLoc, False)) and self.passable(newLoc):
+                    #Open a node
+                    cameFrom[newLoc] = (current, direction)
+                    opened.put(newLoc)
+                    openedBefore[newLoc] = True
+
+                    #If goal is found
+                    if(self.map[newLoc[0]][newLoc[1]] == FOOD and self.map[newLoc[0]][newLoc[1]] ):
+                        destination = newLoc
+
+        if not destination:
+            getLogger().debug("Random direction")
+            return []
+
+        path = []
+
+        while cameFrom[destination][0] != start:
+            path.insert(0, cameFrom[destination])
+            destination = cameFrom[destination][0]
+
+        path.insert(0, cameFrom[destination])
+
+        getLogger().debug("Found: " + str(path))
+        return path
+
 
     # static methods are not tied to a class and don't have self passed in
     # this is a python decorator
