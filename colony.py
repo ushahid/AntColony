@@ -20,6 +20,8 @@ class Colony:
         self.occupied = {}
         self.newRecruits(ants)
 
+
+
     def isRegistered(self, ant):
         #Check in collectors
         for collector in self.collectors:
@@ -46,6 +48,12 @@ class Colony:
             if not self.isRegistered(ant):
                 getLogger().debug("Found an ant: " + str(ant))
                 self.collectors.append(CollectorAnt(ant))
+
+
+    def checkBattalion(self):
+        getLogger().debug("Checking Battalions")
+        pass
+
 
 
     def moveCollectors(self, ants):
@@ -152,6 +160,30 @@ class Colony:
                     battalion.soldiers.remove(soldier)
 
 
+    def checkBattalions(self):
+        soldierCount = len(self.collectors) - self.collectorsUpperLimit
+        if soldierCount >= self.battalionSize:
+            #getLogger().debug("Collectors: " + str(self.collectors))
+            soldiers = []
+            for i in range(1, soldierCount + 1):
+                soldiers.append(self.collectors[-i].getPosition())
+            #getLogger().debug("Soldiers: " + str(soldiers))
+            self.createBattalions(soldiers)
+            self.collectors = self.collectors[0:-soldierCount]
+            #getLogger().debug("Collectors left: " + str(self.collectors))
+
+        soldierCount = len(self.scouts) - self.scoutsUpperLimit
+        if soldierCount >= self.battalionSize:
+            #getLogger().debug("Scouts: " + str(self.scouts))
+            soldiers = []
+            for i in range(1, soldierCount + 1):
+                soldiers.append(self.scouts[-i].getPosition())
+            #getLogger().debug("Soldiers: " + str(soldiers))
+            self.createBattalions(soldiers)
+            self.scouts = self.scouts[0:-soldierCount]
+            #getLogger().debug("Scouts left: " + str(self.scouts))
+
+
     def createBattalions(self, soldiers):
         getLogger().debug("Creating battalion: " + str(soldiers))
         soldiersCount = len(soldiers)
@@ -174,27 +206,4 @@ class Colony:
         self.moveCollectors(ants)
         self.moveScouts(ants)
         self.moveBattalions(ants)
-
-        """#Create battalion from collectors
-        soldierCount = len(self.collectors) - self.collectorsUpperLimit
-        if soldierCount >= self.battalionSize:
-            #getLogger().debug("Collectors: " + str(self.collectors))
-            soldiers = []
-            for i in range(1, soldierCount + 1):
-                soldiers.append(self.collectors[-i].getPosition())
-            #getLogger().debug("Soldiers: " + str(soldiers))
-            self.createBattalions(soldiers)
-            self.collectors = self.collectors[0:-soldierCount]
-            #getLogger().debug("Collectors left: " + str(self.collectors))
-
-        #Create battalion from scouts
-        soldierCount = len(self.scouts) - self.scoutsUpperLimit
-        if soldierCount >= self.battalionSize:
-            #getLogger().debug("Scouts: " + str(self.scouts))
-            soldiers = []
-            for i in range(1, soldierCount + 1):
-                soldiers.append(self.scouts[-i].getPosition())
-            #getLogger().debug("Soldiers: " + str(soldiers))
-            self.createBattalions(soldiers)
-            self.scouts = self.scouts[0:-soldierCount]
-            #getLogger().debug("Scouts left: " + str(self.scouts))"""
+        self.checkBattalion()
