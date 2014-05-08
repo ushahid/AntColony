@@ -30,6 +30,7 @@ class Ant:
                     if (not self.isOccupied(newPos, colony.occupied)) and ants.passable(newPos):
                         ants.issue_order((self.position, direction))
                         colony.occupied[newPos] = True
+                        #colony.occupied[self.position] = False
                         self.position = newPos
                         return True
         elif self.noob:

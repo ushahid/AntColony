@@ -264,6 +264,57 @@ class Ants():
         return tmp
 
 
+    def get_nearest_target(self, start):
+
+        #Fill in the targets
+        targets = {}
+        for row in range(self.rows):
+            for col in range(self.cols):
+                targets[(row, col)] = True
+
+        for key in targets.keys():
+            if self.visible(key):
+                del targets[key]
+
+        for hill in self.enemy_hills():
+            targets[hill] = True
+        for ant in self.enemy_ants():
+            targets[ant] = True
+
+
+                
+
+        opened = Queue()
+        opened.put(start)
+        openedBefore = {}
+        cameFrom = {}
+        destination = False
+
+
+        DIRECTIONS = ['n', 'w', 'e', 's']
+
+        while (not opened.empty()) and (not destination):
+            current = opened.get()
+            for direction in DIRECTIONS:
+                newLoc = self.destination(current, direction)
+                if (not openedBefore.get(newLoc, False)) and self.passable(newLoc):
+                    #Open a node
+                    cameFrom[newLoc] = (current, direction)
+                    opened.put(newLoc)
+                    openedBefore[newLoc] = True
+
+                    #If goal is found
+                    if(targets.get(newLoc, False)):
+                        destination = newLoc
+
+        if not destination:
+            getLogger().debug("Target not found")
+            return None
+
+        return destination
+
+
+
     def get_nearest_unseen(self, start):
         unseen = {}
         for row in range(self.rows):
@@ -313,6 +364,41 @@ class Ants():
 
         getLogger().debug("Found: " + str(path))
         return path
+
+
+    def get_direction(self, start, end):
+        opened = Queue()
+        opened.put(start)
+        openedBefore = {}
+        cameFrom = {}
+        destination = False
+
+        DIRECTIONS = ['n', 'w', 'e', 's']
+
+        while (not opened.empty()) and (not destination):
+            current = opened.get()
+            for direction in DIRECTIONS:
+                newLoc = self.destination(current, direction)
+                if (not openedBefore.get(newLoc, False)) and self.passable(newLoc):
+                    #Open a node
+                    cameFrom[newLoc] = (current, direction)
+                    opened.put(newLoc)
+                    openedBefore[newLoc] = True
+
+                    #If goal is found
+                    if(newLoc == end):
+                        destination = newLoc
+
+        if not destination:
+            getLogger().debug("Path not found")
+            return '#'
+
+        while cameFrom[destination][0] != start:
+            destination = cameFrom[destination][0]
+
+        getLogger().debug("Found: " + str(cameFrom[destination][1]))
+        return cameFrom[destination][1]
+
 
 
     def get_nearest_food(self, start, filters):
